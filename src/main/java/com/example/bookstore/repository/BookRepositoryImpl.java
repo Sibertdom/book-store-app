@@ -15,8 +15,9 @@ public class BookRepositoryImpl implements BookRepository {
 
     @Override
     public Book save(Book book) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         EntityTransaction transaction = null;
-        try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
+        try {
             transaction = entityManager.getTransaction();
             transaction.begin();
             entityManager.persist(book);
@@ -27,13 +28,24 @@ public class BookRepositoryImpl implements BookRepository {
                 transaction.rollback();
             }
             throw new RuntimeException("Can't insert a book to the DB: " + book, e);
+        } finally {
+            if (entityManager != null) {
+                entityManager.close();
+            }
         }
     }
 
     @Override
     public List<Book> findAll() {
-        try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
             return entityManager.createQuery("FROM Book", Book.class).getResultList();
+        } catch (Exception e) {
+            throw new RuntimeException("Can't get all books from DB", e);
+        } finally {
+            if (entityManager != null) {
+                entityManager.close();
+            }
         }
     }
 }
